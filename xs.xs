@@ -22,6 +22,17 @@
 #define SvREFCNT_dec_NN SvREFCNT_dec
 #endif
 
+#ifndef GvCV_set
+#define GvCV_set(gv, cv) (GvCV(gv) = cv)
+#endif
+
+#ifndef gv_init_sv
+#define gv_init_sv(gv, stash, sv, flags) \
+    {   STRLEN len;    \
+        const char* buf = SvPV_const(sv, len);    \
+        gv_init_pvn(gv, stash, buf, len, flags | SvUTF8(sv)); }
+#endif
+
 typedef struct {
     HV* storage;
     SV* marker;
@@ -37,21 +48,47 @@ static MGVTBL vtscope_list = {
     NULL, NULL, NULL, NULL, NCX_on_scope_end_list
 };
 
-inline HV*
-NCX_storage_hv(aTHX_ HV* stash) {
+static HE*
+NCX_stash_glob(aTHX_ HV* stash, SV* name) {
+    HE* he = hv_fetch_ent(stash, name, 1, 0);
 
-    return NULL;
+    if (!isGV(HeVAL(he))) return NULL;
+
+    return he;
 }
 
 inline GV*
 NCX_storage_glob(aTHX_ HV* stash) {
+    SV** svp = hv_fetch(stash, NCX_STORAGE, strlen(NCX_STORAGE), 1);
 
-    return NULL;
+    if (!isGV(*svp)) {
+        gv_init_pvn((GV*)*svp, stash, NCX_STORAGE, strlen(NCX_STORAGE), GV_ADDMULTI);
+    }
+
+    return (GV*)*svp;
+}
+
+inline HV*
+NCX_storage_hv(aTHX_ HV* stash) {
+    GV* glob = NCX_storage_glob(pTHX_ stash);
+    return GvHVn(glob);
 }
 
 static void
 NCX_foreach_sub(aTHX_ HV* stash, void (cb)(aTHX_ HE*, void*), void* data) {
+    STRLEN hvmax = HvMAX(stash);
+    HE** hvarr = HvARRAY(stash);
 
+    for (STRLEN bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
+        for (HE* he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
+            if (HeVAL(he) == &PL_sv_placeholder) continue;
+
+            GV* gv = (GV*)HeVAL(he);
+            if (!isGV(gv) || (GvCV(gv) && !GvCVGEN(gv))) {
+                cb(pTHX_ he, data);
+            }
+        }
+    }
 }
 
 static void
@@ -71,26 +108,57 @@ NCX_cb_add_marker(aTHX_ HE* slot, void* data) {
     }
 }
 
-static HE*
-NCX_stash_glob(aTHX_ HV* stash, SV* name) {
-    return NULL;
-}
+#define NCX_REPLACE_PRE         \
+    GV* old_gv = (GV*)HeVAL(he);\
+    CV* cv = GvCVu(old_gv);     \
+    if (!cv) return;            \
+                                \
+    GV* new_gv = (GV*)newSV(0); \
+
+#define NCX_REPLACE_POST            \
+    HeVAL(he) = (SV*)new_gv;        \
+                                    \
+    GP* swap = GvGP(old_gv);        \
+    GvGP_set(old_gv, GvGP(new_gv)); \
+    GvGP_set(new_gv, swap);         \
+                                    \
+    GvCV_set(new_gv, cv);           \
+    GvCV_set(old_gv, NULL);         \
+                                    \
+    GvLINE(new_gv) = GvLINE(old_gv);\
+
+    // TODO: update mro all-at-once
 
 static void
 NCX_replace_glob_sv(aTHX_ HV* stash, SV* name) {
+    HE* he = NCX_stash_glob(pTHX_ stash, name);
+    if (!he) return;
 
+    NCX_REPLACE_PRE;
+
+    gv_init_sv(new_gv, stash, name, GV_ADDMULTI);
+
+    NCX_REPLACE_POST;
 }
 
 static void
 NCX_replace_glob_hek(aTHX_ HV* stash, HEK* hek) {
+    HE* he = (HE*)hv_fetchhek_flags(stash, hek, 0);
+    if (!he) return;
+
+    NCX_REPLACE_PRE;
+
+    gv_init_pvn(new_gv, stash, HEK_KEY(hek), HEK_LEN(hek), GV_ADDMULTI | HEK_UTF8(hek));
+
+    NCX_REPLACE_POST;
 }
 
 static int
 NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg) {
     HV* stash = (HV*)(mg->mg_obj);
-    GV* slot = NCX_storage_glob(pTHX_ stash);
+    GV* storage_gv = NCX_storage_glob(pTHX_ stash);
 
-    HV* storage = GvHV(slot);
+    HV* storage = GvHV(storage_gv);
     if (!storage) return 0;
 
     STRLEN hvmax = HvMAX(storage);
@@ -106,7 +174,7 @@ NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg) {
     }
 
     SvREFCNT_dec_NN(storage);
-    GvHV(slot) = NULL;
+    GvHV(storage_gv) = NULL;
 
     return 0;
 }
@@ -198,10 +266,12 @@ PPCODE:
 
                 for (SSize_t i = 0; i <= len; ++i) {
                     SV** svp = av_fetch(except_av, i, 0);
+                    // TODO: do not vivify glob, use custom marker func
                     if (svp) NCX_cb_add_marker(NCX_stash_glob(pTHX_ stash, *svp), &mexcl);
                 }
 
             } else {
+                // TODO: the same
                 NCX_cb_add_marker(NCX_stash_glob(pTHX_ stash, except), &mexcl);
             }
         }
