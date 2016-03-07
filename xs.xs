@@ -18,13 +18,33 @@
     ((SV**)hv_common((hv), NULL, HEK_KEY(hek), HEK_LEN(hek), HEK_UTF8(hek), flags, NULL, HEK_HASH(hek)))
 #endif
 
+#ifndef SvREFCNT_dec_NN
+#define SvREFCNT_dec_NN SvREFCNT_dec
+#endif
+
 typedef struct {
     HV* storage;
     SV* marker;
 } fn_marker;
 
-static HV*
+static int NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg);
+static MGVTBL vtscope_normal = {
+    NULL, NULL, NULL, NULL, NCX_on_scope_end_normal
+};
+
+static int NCX_on_scope_end_list(aTHX_ SV* sv, MAGIC* mg);
+static MGVTBL vtscope_list = {
+    NULL, NULL, NULL, NULL, NCX_on_scope_end_list
+};
+
+inline HV*
 NCX_get_storage(aTHX_ HV* stash) {
+
+    return NULL;
+}
+
+inline GV*
+NCX_storage_slot(aTHX_ HV* stash) {
 
     return NULL;
 }
@@ -51,13 +71,75 @@ NCX_cb_add_marker(aTHX_ HE* slot, void* data) {
     }
 }
 
+static HE*
+NCX_glob_slot(aTHX_ HV* stash, SV* name) {
+    return NULL;
+}
+
 static void
-NCX_replace_glob(aTHX_ HV* stash, SV* name) {
+NCX_replace_glob_sv(aTHX_ HV* stash, SV* name) {
 
 }
 
 static void
-NCX_register_hook(aTHX) {
+NCX_replace_glob_hek(aTHX_ HV* stash, HEK* hek) {
+}
+
+static int
+NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg) {
+    HV* stash = (HV*)(mg->mg_obj);
+    GV* slot = NCX_storage_slot(pTHX_ stash);
+
+    HV* storage = GvHV(slot);
+    if (!storage) return 0;
+
+    STRLEN hvmax = HvMAX(storage);
+    HE** hvarr = HvARRAY(storage);
+
+    SV* pl_remove = NCX_REMOVE;
+    for (STRLEN bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
+        for (const HE* he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
+            if (HeVAL(he) == pl_remove) {
+                NCX_replace_glob_hek(pTHX_ stash, HeKEY_hek(he));
+            }
+        }
+    }
+
+    SvREFCNT_dec_NN(storage);
+    GvHV(slot) = NULL;
+
+    return 0;
+}
+
+static void
+NCX_register_hook_normal(aTHX_ HV* stash) {
+    SV* hints = (SV*)GvHV(PL_hintgv);
+
+    if (!SvRMAGICAL(hints) || !mg_findext(hints, PERL_MAGIC_ext,  &vtscope_normal)) {
+        sv_magicext(hints, (SV*)stash, PERL_MAGIC_ext, &vtscope_normal, NULL, 0);
+        PL_hints |= HINT_LOCALIZE_HH;
+    }
+}
+
+static int
+NCX_on_scope_end_list(aTHX_ SV* sv, MAGIC* mg) {
+    HV* stash = (HV*)(mg->mg_obj);
+    AV* list = (AV*)(mg->mg_ptr);
+
+    SV** items = AvARRAY(list);
+    SSize_t fill = AvFILLp(list);
+
+    while (fill-- >= 0) {
+        NCX_replace_glob_sv(pTHX_ stash, *items++);
+    }
+
+    return 0;
+}
+
+static void
+NCX_register_hook_list(aTHX_ HV* stash, AV* list) {
+    sv_magicext((SV*)GvHV(PL_hintgv), (SV*)stash, PERL_MAGIC_ext, &vtscope_list, (const char *)list, HEf_SVKEY);
+    PL_hints |= HINT_LOCALIZE_HH;
 }
 
 MODULE = namespace::clean::xs     PACKAGE = namespace::clean::xs
@@ -67,16 +149,68 @@ void
 import(SV* self, ...)
 PPCODE:
 {
-    HV* stash;
-    if (items > 2) {
-    } else {
-        stash = CopSTASH(PL_curcop);
+    HV* stash = CopSTASH(PL_curcop);;
+
+    SV* except = NULL;
+    SSize_t processed;
+    for (processed = 1; processed < items; processed += 2) {
+        SV* arg = *++SP;
+        if (!SvPOK(arg)) break;
+
+        const char* buf = SvPVX_const(arg);
+        if (!SvCUR(arg) || buf[0] != '-') break;
+
+        if (processed + 1 > items) {
+            croak("Not enough arguments for %s option in import() call", buf);
+        }
+
+        if (strEQ(buf, "-cleanee")) {
+            stash = gv_stashsv(*++SP, GV_ADD);
+
+        } else if (strEQ(buf, "-except")) {
+            except = *++SP;
+
+        } else {
+            croak("Unknown argument %s in import() call", buf);
+        }
     }
 
-    HV* storage = NCX_get_storage(pTHX_ stash);
-    fn_marker m = {storage, NCX_REMOVE};
+    if (processed < items) {
+        AV* list = newAV();
+        av_extend(list, items - processed - 1);
 
-    NCX_foreach_sub(pTHX_ stash, NCX_cb_add_marker, &m);
+        SV** list_data = AvARRAY(list);
+        while (++processed <= items) {
+            *list_data++ = POPs;
+        }
+
+        NCX_register_hook_list(pTHX_ stash, list);
+        SvREFCNT_dec_NN(list); /* refcnt owned by magic now */
+
+    } else {
+        HV* storage = NCX_get_storage(pTHX_ stash);
+        if (except) {
+            fn_marker mexcl = {storage, NCX_EXCLUDE};
+
+            if (SvROK(except) && SvTYPE(SvRV(except)) == SVt_PVAV) {
+                AV* except_av = (AV*)SvRV(except);
+                SSize_t len = av_len(except_av);
+
+                for (SSize_t i = 0; i <= len; ++i) {
+                    SV** svp = av_fetch(except_av, i, 0);
+                    if (svp) NCX_cb_add_marker(NCX_glob_slot(pTHX_ stash, *svp), &mexcl);
+                }
+
+            } else {
+                NCX_cb_add_marker(NCX_glob_slot(pTHX_ stash, except), &mexcl);
+            }
+        }
+
+        fn_marker m = {storage, NCX_REMOVE};
+
+        NCX_foreach_sub(pTHX_ stash, NCX_cb_add_marker, &m);
+        NCX_register_hook_normal(pTHX_ stash);
+    }
 
     XSRETURN_YES;
 }
@@ -92,7 +226,7 @@ PPCODE:
         if (SvPOK(arg) && strEQ(SvPVX(arg), "-cleanee")) {
             stash = gv_stashsv(*++SP, 0);
         } else {
-            croak("Unknown argument %s for unimport() call", SvPV_nolen(arg));
+            croak("Unknown argument %s in unimport() call", SvPV_nolen(arg));
         }
     } else {
         stash = CopSTASH(PL_curcop);
@@ -117,7 +251,7 @@ PPCODE:
         SP += 2;
 
         while (--items >= 2) {
-            NCX_replace_glob(pTHX_ stash, POPs);
+            NCX_replace_glob_sv(pTHX_ stash, POPs);
         }
     }
 
