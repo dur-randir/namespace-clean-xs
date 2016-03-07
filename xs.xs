@@ -38,13 +38,13 @@ static MGVTBL vtscope_list = {
 };
 
 inline HV*
-NCX_get_storage(aTHX_ HV* stash) {
+NCX_storage_hv(aTHX_ HV* stash) {
 
     return NULL;
 }
 
 inline GV*
-NCX_storage_slot(aTHX_ HV* stash) {
+NCX_storage_glob(aTHX_ HV* stash) {
 
     return NULL;
 }
@@ -72,7 +72,7 @@ NCX_cb_add_marker(aTHX_ HE* slot, void* data) {
 }
 
 static HE*
-NCX_glob_slot(aTHX_ HV* stash, SV* name) {
+NCX_stash_glob(aTHX_ HV* stash, SV* name) {
     return NULL;
 }
 
@@ -88,7 +88,7 @@ NCX_replace_glob_hek(aTHX_ HV* stash, HEK* hek) {
 static int
 NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg) {
     HV* stash = (HV*)(mg->mg_obj);
-    GV* slot = NCX_storage_slot(pTHX_ stash);
+    GV* slot = NCX_storage_glob(pTHX_ stash);
 
     HV* storage = GvHV(slot);
     if (!storage) return 0;
@@ -188,7 +188,7 @@ PPCODE:
         SvREFCNT_dec_NN(list); /* refcnt owned by magic now */
 
     } else {
-        HV* storage = NCX_get_storage(pTHX_ stash);
+        HV* storage = NCX_storage_hv(pTHX_ stash);
         if (except) {
             fn_marker mexcl = {storage, NCX_EXCLUDE};
 
@@ -198,11 +198,11 @@ PPCODE:
 
                 for (SSize_t i = 0; i <= len; ++i) {
                     SV** svp = av_fetch(except_av, i, 0);
-                    if (svp) NCX_cb_add_marker(NCX_glob_slot(pTHX_ stash, *svp), &mexcl);
+                    if (svp) NCX_cb_add_marker(NCX_stash_glob(pTHX_ stash, *svp), &mexcl);
                 }
 
             } else {
-                NCX_cb_add_marker(NCX_glob_slot(pTHX_ stash, except), &mexcl);
+                NCX_cb_add_marker(NCX_stash_glob(pTHX_ stash, except), &mexcl);
             }
         }
 
@@ -233,7 +233,7 @@ PPCODE:
     }
 
     if (stash) {
-        HV* storage = NCX_get_storage(pTHX_ stash);
+        HV* storage = NCX_storage_hv(pTHX_ stash);
         fn_marker m = {storage, NCX_EXCLUDE};
 
         NCX_foreach_sub(pTHX_ stash, NCX_cb_add_marker, &m);
@@ -281,7 +281,7 @@ PPCODE:
 
     HV* stash = gv_stashsv(package, 0);
     if (stash) {
-        HV* storage = NCX_get_storage(pTHX_ stash);
+        HV* storage = NCX_storage_hv(pTHX_ stash);
 
         HV* exclude = newHV();
         hv_store(hv, "exclude", 7, newRV_noinc((SV*)exclude), 0);
