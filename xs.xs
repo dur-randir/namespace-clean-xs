@@ -43,18 +43,18 @@ typedef struct {
     SV* marker;
 } fn_marker;
 
-static int NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg);
+static int NCX_on_scope_end_normal(pTHX_ SV* sv, MAGIC* mg);
 static MGVTBL vtscope_normal = {
     NULL, NULL, NULL, NULL, NCX_on_scope_end_normal
 };
 
-static int NCX_on_scope_end_list(aTHX_ SV* sv, MAGIC* mg);
+static int NCX_on_scope_end_list(pTHX_ SV* sv, MAGIC* mg);
 static MGVTBL vtscope_list = {
     NULL, NULL, NULL, NULL, NCX_on_scope_end_list
 };
 
 static HE*
-NCX_stash_glob(aTHX_ HV* stash, SV* name) {
+NCX_stash_glob(pTHX_ HV* stash, SV* name) {
     HE* he = hv_fetch_ent(stash, name, 1, 0);
 
     if (!isGV(HeVAL(he))) return NULL;
@@ -63,7 +63,7 @@ NCX_stash_glob(aTHX_ HV* stash, SV* name) {
 }
 
 inline GV*
-NCX_storage_glob(aTHX_ HV* stash) {
+NCX_storage_glob(pTHX_ HV* stash) {
     SV** svp = hv_fetch(stash, NCX_STORAGE, strlen(NCX_STORAGE), 1);
 
     if (!isGV(*svp)) {
@@ -74,13 +74,13 @@ NCX_storage_glob(aTHX_ HV* stash) {
 }
 
 inline HV*
-NCX_storage_hv(aTHX_ HV* stash) {
-    GV* glob = NCX_storage_glob(pTHX_ stash);
+NCX_storage_hv(pTHX_ HV* stash) {
+    GV* glob = NCX_storage_glob(aTHX_ stash);
     return GvHVn(glob);
 }
 
 static void
-NCX_foreach_sub(aTHX_ HV* stash, void (cb)(aTHX_ HE*, void*), void* data) {
+NCX_foreach_sub(pTHX_ HV* stash, void (cb)(pTHX_ HE*, void*), void* data) {
     STRLEN hvmax = HvMAX(stash);
     HE** hvarr = HvARRAY(stash);
 
@@ -90,20 +90,20 @@ NCX_foreach_sub(aTHX_ HV* stash, void (cb)(aTHX_ HE*, void*), void* data) {
 
             GV* gv = (GV*)HeVAL(he);
             if (!isGV(gv) || (GvCV(gv) && !GvCVGEN(gv))) {
-                cb(pTHX_ he, data);
+                cb(aTHX_ he, data);
             }
         }
     }
 }
 
 static void
-NCX_cb_get_functions(aTHX_ HE* slot, void* hv) {
+NCX_cb_get_functions(pTHX_ HE* slot, void* hv) {
     GV* gv = (GV*)HeVAL(slot);
     hv_storehek((HV*)hv, HeKEY_hek(slot), newRV_inc((SV*)GvCV(gv)));
 }
 
 static void
-NCX_cb_add_marker(aTHX_ HE* slot, void* data) {
+NCX_cb_add_marker(pTHX_ HE* slot, void* data) {
     fn_marker* m = (fn_marker*)data;
 
     HE* he = (HE*)hv_fetchhek_flags(m->storage, HeKEY_hek(slot), HV_FETCH_EMPTY_HE | HV_FETCH_LVALUE);
@@ -114,7 +114,7 @@ NCX_cb_add_marker(aTHX_ HE* slot, void* data) {
 }
 
 static void
-NCX_single_marker(aTHX_ HV* storage, SV* name, SV* marker) {
+NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
     HE* he = (HE*)hv_common(storage, name, NULL, 0, 0, HV_FETCH_EMPTY_HE | HV_FETCH_LVALUE, NULL, 0);
 
     if (HeVAL(he) == NULL) {
@@ -150,8 +150,8 @@ NCX_single_marker(aTHX_ HV* storage, SV* name, SV* marker) {
     // TODO: update mro all-at-once
 
 static void
-NCX_replace_glob_sv(aTHX_ HV* stash, SV* name) {
-    HE* he = NCX_stash_glob(pTHX_ stash, name);
+NCX_replace_glob_sv(pTHX_ HV* stash, SV* name) {
+    HE* he = NCX_stash_glob(aTHX_ stash, name);
     if (!he) return;
 
     NCX_REPLACE_PRE;
@@ -162,7 +162,7 @@ NCX_replace_glob_sv(aTHX_ HV* stash, SV* name) {
 }
 
 static void
-NCX_replace_glob_hek(aTHX_ HV* stash, HEK* hek) {
+NCX_replace_glob_hek(pTHX_ HV* stash, HEK* hek) {
     HE* he = (HE*)hv_fetchhek_flags(stash, hek, 0);
     if (!he) return;
 
@@ -174,9 +174,9 @@ NCX_replace_glob_hek(aTHX_ HV* stash, HEK* hek) {
 }
 
 static int
-NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg) {
+NCX_on_scope_end_normal(pTHX_ SV* sv, MAGIC* mg) {
     HV* stash = (HV*)(mg->mg_obj);
-    GV* storage_gv = NCX_storage_glob(pTHX_ stash);
+    GV* storage_gv = NCX_storage_glob(aTHX_ stash);
 
     HV* storage = GvHV(storage_gv);
     if (!storage) return 0;
@@ -188,7 +188,7 @@ NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg) {
     for (STRLEN bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
         for (const HE* he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
             if (HeVAL(he) == pl_remove) {
-                NCX_replace_glob_hek(pTHX_ stash, HeKEY_hek(he));
+                NCX_replace_glob_hek(aTHX_ stash, HeKEY_hek(he));
             }
         }
     }
@@ -200,7 +200,7 @@ NCX_on_scope_end_normal(aTHX_ SV* sv, MAGIC* mg) {
 }
 
 static void
-NCX_register_hook_normal(aTHX_ HV* stash) {
+NCX_register_hook_normal(pTHX_ HV* stash) {
     SV* hints = (SV*)GvHV(PL_hintgv);
 
     if (SvRMAGICAL(hints)) {
@@ -217,7 +217,7 @@ NCX_register_hook_normal(aTHX_ HV* stash) {
 }
 
 static int
-NCX_on_scope_end_list(aTHX_ SV* sv, MAGIC* mg) {
+NCX_on_scope_end_list(pTHX_ SV* sv, MAGIC* mg) {
     HV* stash = (HV*)(mg->mg_obj);
     AV* list = (AV*)(mg->mg_ptr);
 
@@ -225,14 +225,14 @@ NCX_on_scope_end_list(aTHX_ SV* sv, MAGIC* mg) {
     SSize_t fill = AvFILLp(list);
 
     while (fill-- >= 0) {
-        NCX_replace_glob_sv(pTHX_ stash, *items++);
+        NCX_replace_glob_sv(aTHX_ stash, *items++);
     }
 
     return 0;
 }
 
 static void
-NCX_register_hook_list(aTHX_ HV* stash, AV* list) {
+NCX_register_hook_list(pTHX_ HV* stash, AV* list) {
     sv_magicext((SV*)GvHV(PL_hintgv), (SV*)stash, PERL_MAGIC_ext, &vtscope_list, (const char *)list, HEf_SVKEY);
     PL_hints |= HINT_LOCALIZE_HH;
 }
@@ -281,11 +281,11 @@ PPCODE:
             *list_data++ = POPs;
         }
 
-        NCX_register_hook_list(pTHX_ stash, list);
+        NCX_register_hook_list(aTHX_ stash, list);
         SvREFCNT_dec_NN(list); /* refcnt owned by magic now */
 
     } else {
-        HV* storage = NCX_storage_hv(pTHX_ stash);
+        HV* storage = NCX_storage_hv(aTHX_ stash);
         if (except) {
             if (SvROK(except) && SvTYPE(SvRV(except)) == SVt_PVAV) {
                 AV* except_av = (AV*)SvRV(except);
@@ -293,18 +293,18 @@ PPCODE:
 
                 for (SSize_t i = 0; i <= len; ++i) {
                     SV** svp = av_fetch(except_av, i, 0);
-                    if (svp) NCX_single_marker(pTHX_ storage, *svp, NCX_EXCLUDE);
+                    if (svp) NCX_single_marker(aTHX_ storage, *svp, NCX_EXCLUDE);
                 }
 
             } else {
-                NCX_single_marker(pTHX_ storage, except, NCX_EXCLUDE);
+                NCX_single_marker(aTHX_ storage, except, NCX_EXCLUDE);
             }
         }
 
         fn_marker m = {storage, NCX_REMOVE};
 
-        NCX_foreach_sub(pTHX_ stash, NCX_cb_add_marker, &m);
-        NCX_register_hook_normal(pTHX_ stash);
+        NCX_foreach_sub(aTHX_ stash, NCX_cb_add_marker, &m);
+        NCX_register_hook_normal(aTHX_ stash);
     }
 
     XSRETURN_YES;
@@ -329,10 +329,10 @@ PPCODE:
     }
 
     if (stash) {
-        HV* storage = NCX_storage_hv(pTHX_ stash);
+        HV* storage = NCX_storage_hv(aTHX_ stash);
         fn_marker m = {storage, NCX_EXCLUDE};
 
-        NCX_foreach_sub(pTHX_ stash, NCX_cb_add_marker, &m);
+        NCX_foreach_sub(aTHX_ stash, NCX_cb_add_marker, &m);
     }
 
     XSRETURN_YES;
@@ -347,7 +347,7 @@ PPCODE:
         SP += 3;
 
         while (--items >= 2) {
-            NCX_replace_glob_sv(pTHX_ stash, POPs);
+            NCX_replace_glob_sv(aTHX_ stash, POPs);
         }
     }
 
@@ -362,7 +362,7 @@ PPCODE:
     
     HV* stash = gv_stashsv(package, 0);
     if (stash) {
-        NCX_foreach_sub(pTHX_ stash, NCX_cb_get_functions, hv);
+        NCX_foreach_sub(aTHX_ stash, NCX_cb_get_functions, hv);
     }
 
     PUSHs(sv_2mortal(newRV_noinc((SV*)hv)));
@@ -377,7 +377,7 @@ PPCODE:
 
     HV* stash = gv_stashsv(package, 0);
     if (stash) {
-        HV* storage = NCX_storage_hv(pTHX_ stash);
+        HV* storage = NCX_storage_hv(aTHX_ stash);
 
         HV* exclude = newHV();
         hv_store(hv, "exclude", 7, newRV_noinc((SV*)exclude), 0);
