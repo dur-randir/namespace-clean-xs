@@ -114,8 +114,8 @@ NCX_cb_add_marker(aTHX_ HE* slot, void* data) {
 }
 
 static void
-NCX_single_marker(aTHX_ HV* stash, SV* name, SV* marker) {
-    HE* he = (HE*)hv_common(stash, name, NULL, 0, 0, HV_FETCH_EMPTY_HE | HV_FETCH_LVALUE, NULL, 0);
+NCX_single_marker(aTHX_ HV* storage, SV* name, SV* marker) {
+    HE* he = (HE*)hv_common(storage, name, NULL, 0, 0, HV_FETCH_EMPTY_HE | HV_FETCH_LVALUE, NULL, 0);
 
     if (HeVAL(he) == NULL) {
         HeVAL(he) = marker;
@@ -291,11 +291,11 @@ PPCODE:
 
                 for (SSize_t i = 0; i <= len; ++i) {
                     SV** svp = av_fetch(except_av, i, 0);
-                    if (svp) NCX_single_marker(pTHX_ stash, *svp, NCX_EXCLUDE);
+                    if (svp) NCX_single_marker(pTHX_ storage, *svp, NCX_EXCLUDE);
                 }
 
             } else {
-                NCX_single_marker(pTHX_ stash, except, NCX_EXCLUDE);
+                NCX_single_marker(pTHX_ storage, except, NCX_EXCLUDE);
             }
         }
 
