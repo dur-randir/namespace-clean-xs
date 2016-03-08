@@ -318,11 +318,11 @@ PPCODE:
 {
     HV* stash;
     if (items > 2) {
-        SP += 2;
-        SV* arg = POPs;
+        ++SP;
+        SV* arg = *++SP;
 
         if (SvPOK(arg) && strEQ(SvPVX(arg), "-cleanee")) {
-            stash = gv_stashsv(POPs, 0);
+            stash = gv_stashsv(*++SP, 0);
         } else {
             croak("Unknown argument %s in unimport() call", SvPV_nolen(arg));
         }
@@ -346,10 +346,10 @@ PPCODE:
 {
     HV* stash = gv_stashsv(package, 0);
     if (stash) {
-        SP += 3;
+        SP += 2;
 
         while (--items >= 2) {
-            NCX_replace_glob_sv(aTHX_ stash, POPs);
+            NCX_replace_glob_sv(aTHX_ stash, *++SP);
         }
     }
 
