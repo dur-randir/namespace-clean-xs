@@ -190,10 +190,17 @@ static void
 NCX_register_hook_normal(aTHX_ HV* stash) {
     SV* hints = (SV*)GvHV(PL_hintgv);
 
-    if (!SvRMAGICAL(hints) || !mg_findext(hints, PERL_MAGIC_ext,  &vtscope_normal)) {
-        sv_magicext(hints, (SV*)stash, PERL_MAGIC_ext, &vtscope_normal, NULL, 0);
-        PL_hints |= HINT_LOCALIZE_HH;
+    if (SvRMAGICAL(hints)) {
+        MAGIC* mg;
+        for (mg = SvMAGIC(hints); mg; mg = mg->mg_moremagic) {
+            if (mg->mg_virtual == &vtscope_normal && mg->mg_obj == (SV*)stash) {
+                return;
+            }
+        }
     }
+
+    sv_magicext(hints, (SV*)stash, PERL_MAGIC_ext, &vtscope_normal, NULL, 0);
+    PL_hints |= HINT_LOCALIZE_HH;
 }
 
 static int
