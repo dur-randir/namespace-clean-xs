@@ -138,9 +138,11 @@ NCX_single_marker(aTHX_ HV* storage, SV* name, SV* marker) {
 #define NCX_REPLACE_POST            \
     HeVAL(he) = (SV*)new_gv;        \
                                     \
-    GP* swap = GvGP(old_gv);        \
-    GvGP_set(old_gv, GvGP(new_gv)); \
-    GvGP_set(new_gv, swap);         \
+    if (GvSV(old_gv)) GvSV(new_gv) = (SV*)SvREFCNT_inc_NN(GvSV(old_gv));         \
+    if (GvAV(old_gv)) GvAV(new_gv) = (AV*)SvREFCNT_inc_NN(GvAV(old_gv));         \
+    if (GvHV(old_gv)) GvHV(new_gv) = (HV*)SvREFCNT_inc_NN(GvHV(old_gv));         \
+    if (GvIOp(old_gv)) GvIOp(new_gv) = (IO*)SvREFCNT_inc_NN(GvIOp(old_gv));      \
+    if (GvFORM(old_gv)) GvFORM(new_gv) = (CV*)SvREFCNT_inc_NN(GvFORM(old_gv));   \
                                     \
     GvCV_set(old_gv, cv);           \
     GvCV_set(new_gv, NULL);         \
