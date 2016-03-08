@@ -183,6 +183,7 @@ NCX_on_scope_end_normal(pTHX_ SV* sv, MAGIC* mg) {
 
     STRLEN hvmax = HvMAX(storage);
     HE** hvarr = HvARRAY(storage);
+    if (!hvarr) return 0;
 
     SV* pl_remove = NCX_REMOVE;
     for (STRLEN bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
