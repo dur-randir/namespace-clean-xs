@@ -276,10 +276,11 @@ PPCODE:
     if (processed < items) {
         AV* list = newAV();
         av_extend(list, items - processed - 1);
+        AvFILLp(list) = items - processed - 1;
 
         SV** list_data = AvARRAY(list);
         while (++processed <= items) {
-            *list_data++ = POPs;
+            *list_data++ = SvREFCNT_inc_NN(*SP++);
         }
 
         NCX_register_hook_list(aTHX_ stash, list);
