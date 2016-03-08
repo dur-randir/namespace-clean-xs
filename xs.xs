@@ -8,6 +8,11 @@
 #define NCX_REMOVE (&PL_sv_yes)
 #define NCX_EXCLUDE (&PL_sv_no)
 
+#ifndef hv_deletehek
+#define hv_deletehek(hv, hek, flags) \
+    hv_common((hv), NULL, HEK_KEY(hek), HEK_LEN(hek), HEK_UTF8(hek), (flags)|HV_DELETE, NULL, HEK_HASH(hek))
+#endif
+
 #ifndef hv_storehek
 #define hv_storehek(hv, hek, val) \
     hv_common((hv), NULL, HEK_KEY(hek), HEK_LEN(hek), HEK_UTF8(hek), HV_FETCH_ISSTORE|HV_FETCH_JUST_SV, (val), HEK_HASH(hek))
@@ -119,6 +124,12 @@ NCX_single_marker(aTHX_ HV* stash, SV* name, SV* marker) {
 
 #define NCX_REPLACE_PRE         \
     GV* old_gv = (GV*)HeVAL(he);\
+                                \
+    if (!isGV(old_gv)) {        \
+        hv_deletehek(stash, HeKEY_hek(he), 0);   \
+        return;                 \
+    }                           \
+                                \
     CV* cv = GvCVu(old_gv);     \
     if (!cv) return;            \
                                 \
