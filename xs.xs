@@ -131,10 +131,8 @@ NCX_single_marker(aTHX_ HV* stash, SV* name, SV* marker) {
     GvGP_set(old_gv, GvGP(new_gv)); \
     GvGP_set(new_gv, swap);         \
                                     \
-    GvCV_set(new_gv, cv);           \
-    GvCV_set(old_gv, NULL);         \
-                                    \
-    GvLINE(new_gv) = GvLINE(old_gv);\
+    GvCV_set(old_gv, cv);           \
+    GvCV_set(new_gv, NULL);         \
 
     // TODO: update mro all-at-once
 
