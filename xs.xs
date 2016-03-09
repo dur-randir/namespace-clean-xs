@@ -38,6 +38,10 @@
         gv_init_pvn(gv, stash, buf, len, flags | SvUTF8(sv)); }
 #endif
 
+#ifndef gv_init_pvn
+#define gv_init_pvn(gv,stash,name,len,flags) gv_init(gv,stash,name,len,flags & GV_ADDMULTI)
+#endif
+
 typedef struct {
     HV* storage;
     SV* marker;
