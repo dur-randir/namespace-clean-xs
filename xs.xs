@@ -87,6 +87,7 @@ static void
 NCX_foreach_sub(pTHX_ HV* stash, void (cb)(pTHX_ HE*, void*), void* data) {
     STRLEN hvmax = HvMAX(stash);
     HE** hvarr = HvARRAY(stash);
+    assert(hvarr);
 
     for (STRLEN bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
         for (HE* he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
@@ -197,6 +198,8 @@ NCX_on_scope_end_normal(pTHX_ SV* sv, MAGIC* mg) {
     SV* pl_remove = NCX_REMOVE;
     for (STRLEN bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
         for (const HE* he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
+            assert(HeVAL(he) == NCX_REMOVE || HeVAL(he) == NCX_EXCLUDE);
+
             if (HeVAL(he) == pl_remove) {
                 NCX_replace_glob_hek(aTHX_ stash, HeKEY_hek(he));
             }
@@ -212,6 +215,7 @@ NCX_on_scope_end_normal(pTHX_ SV* sv, MAGIC* mg) {
 static void
 NCX_register_hook_normal(pTHX_ HV* stash) {
     SV* hints = (SV*)GvHV(PL_hintgv);
+    assert(hints);
 
     if (SvRMAGICAL(hints)) {
         MAGIC* mg;
