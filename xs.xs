@@ -157,8 +157,6 @@ NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
     GvCV_set(old_gv, cv);           \
     GvCV_set(new_gv, NULL);         \
 
-    // TODO: update mro all-at-once
-
 static void
 NCX_replace_glob_sv(pTHX_ HV* stash, SV* name) {
     HE* he = NCX_stash_glob(aTHX_ stash, name);
@@ -206,6 +204,8 @@ NCX_on_scope_end_normal(pTHX_ SV* sv, MAGIC* mg) {
         }
     }
 
+    mro_method_changed_in(stash);
+
     SvREFCNT_dec_NN(storage);
     GvHV(storage_gv) = NULL;
 
@@ -241,6 +241,8 @@ NCX_on_scope_end_list(pTHX_ SV* sv, MAGIC* mg) {
     while (fill-- >= 0) {
         NCX_replace_glob_sv(aTHX_ stash, *items++);
     }
+
+    mro_method_changed_in(stash);
 
     return 0;
 }
@@ -364,6 +366,8 @@ PPCODE:
         while (--items >= 2) {
             NCX_replace_glob_sv(aTHX_ stash, *++SP);
         }
+
+        mro_method_changed_in(stash);
     }
 
     XSRETURN_UNDEF;
