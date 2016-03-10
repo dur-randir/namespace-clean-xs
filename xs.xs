@@ -103,7 +103,12 @@ NCX_foreach_sub(pTHX_ HV* stash, void (cb)(pTHX_ HE*, void*), void* data) {
 static void
 NCX_cb_get_functions(pTHX_ HE* slot, void* hv) {
     GV* gv = (GV*)HeVAL(slot);
-    hv_storehek((HV*)hv, HeKEY_hek(slot), newRV_inc((SV*)GvCV(gv)));
+
+    if (isGV(gv)) {
+        hv_storehek((HV*)hv, HeKEY_hek(slot), newRV_inc((SV*)GvCV(gv)));
+    } else {
+        hv_storehek((HV*)hv, HeKEY_hek(slot), SvREFCNT_inc_NN(gv));
+    }
 }
 
 static void
