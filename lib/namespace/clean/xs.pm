@@ -20,7 +20,7 @@ namespace::clean::xs - Keep imports and functions out of your namespace, in XS
 
 =head1 DESCRIPTION
 
-See L<namespace::clean> for complete description of this module's logic.
+See L<namespace::clean> for the complete description of this module's logic.
 
 =head1 COMPABILITY
 
@@ -29,25 +29,25 @@ individual functions have the following differences:
 
 =over
 
-=item * L<get_class_store>
+=item L</get_class_store>
 
 Structure of the returned hash is the same, but it has nothing in common with the internal
 storage. Modifications of it are in vain.
 
 While L<namespace::clean> saves this info forever, this module deletes it after namespace
-cleanup is done (as it never happens for a second time as in the original module), so you
+cleanup is done (as it never happens for a second time, like the original module), so you
 can see valid data only for a short time.
 
-=item * L<get_functions>
+=item L</get_functions>
 
 In the returned hash function stubs and constants are not expanded. While you can still
 call the latter and can't call the former, you may get different error messages.
 
-=item * L<unimport>
+=item L</unimport>
 
 Will croak on unrecognized options.
 
-=item * L<import>
+=item L</import>
 
 Will croak on unrecognized options.
 
