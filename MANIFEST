@@ -1,4 +1,5 @@
 .travis.yml
+Changes
 lib/namespace/clean/xs.pm
 lib/namespace/clean/xs/all.pm
 Makefile.PL
