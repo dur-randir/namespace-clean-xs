@@ -360,10 +360,10 @@ clean_subroutines(SV* self, SV* package, ...)
 PPCODE:
 {
     HV* stash = gv_stashsv(package, 0);
-    if (stash) {
+    if (stash && --items > 1) {
         SP += 2;
 
-        while (--items >= 2) {
+        while (--items > 0) {
             NCX_replace_glob_sv(aTHX_ stash, *++SP);
         }
 
