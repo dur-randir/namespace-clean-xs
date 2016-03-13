@@ -234,9 +234,11 @@ static int
 NCX_on_scope_end_list(pTHX_ SV* sv, MAGIC* mg) {
     HV* stash = (HV*)(mg->mg_obj);
     AV* list = (AV*)(mg->mg_ptr);
+    assert(stash && list);
 
     SV** items = AvARRAY(list);
     SSize_t fill = AvFILLp(list);
+    assert(items && fill >= 0);
 
     while (fill-- >= 0) {
         NCX_replace_glob_sv(aTHX_ stash, *items++);
