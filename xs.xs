@@ -407,6 +407,7 @@ PPCODE:
         hv_iterinit(storage);
         HE* he;
         while ((he = hv_iternext(storage))) {
+            assert(HeVAL(he) == NCX_EXCLUDE || HeVAL(he) == NCX_REMOVE);
             hv_storehek(HeVAL(he) == NCX_EXCLUDE ? exclude : remove, HeKEY_hek(he), &PL_sv_undef);
         }
     }
