@@ -7,10 +7,8 @@ BEGIN {
 
     $INC{'namespace/clean.pm'} = $INC{'namespace/clean/xs.pm'};
 
-    for my $glob (keys %namespace::clean::xs::) {
+    for my $glob (qw/import unimport clean_subroutines get_functions get_class_store/) {
         no strict 'refs';
-        next unless defined *{"namespace::clean::xs::$glob"}{CODE};
-
         *{"namespace::clean::$glob"} = *{"namespace::clean::xs::$glob"}{CODE};
     }
 }
