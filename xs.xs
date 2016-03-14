@@ -68,8 +68,10 @@ NCX_foreach_sub(pTHX_ HV* stash, void (cb)(pTHX_ HE*, void*), void* data) {
     HE** hvarr = HvARRAY(stash);
     assert(hvarr);
 
-    for (STRLEN bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
-        for (HE* he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
+    HE* he;
+    STRLEN bucket_num;
+    for (bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
+        for (he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
             if (HeVAL(he) == &PL_sv_placeholder) continue;
 
             GV* gv = (GV*)HeVAL(he);
@@ -173,8 +175,11 @@ NCX_on_scope_end_normal(pTHX_ SV* sv, MAGIC* mg) {
     if (!hvarr) return 0;
 
     SV* pl_remove = NCX_REMOVE;
-    for (STRLEN bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
-        for (const HE* he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
+
+    HE* he;
+    STRLEN bucket_num;
+    for (bucket_num = 0; bucket_num <= hvmax; ++bucket_num) {
+        for (he = hvarr[bucket_num]; he; he = HeNEXT(he)) {
             assert(HeVAL(he) == NCX_REMOVE || HeVAL(he) == NCX_EXCLUDE);
 
             if (HeVAL(he) == pl_remove) {
@@ -298,7 +303,8 @@ PPCODE:
                 AV* except_av = (AV*)SvRV(except);
                 SSize_t len = av_len(except_av);
 
-                for (SSize_t i = 0; i <= len; ++i) {
+                SSize_t i;
+                for (i = 0; i <= len; ++i) {
                     SV** svp = av_fetch(except_av, i, 0);
                     if (svp) NCX_single_marker(aTHX_ storage, *svp, NCX_EXCLUDE);
                 }
