@@ -1,4 +1,5 @@
 use strict;
+BEGIN { $ENV{LC_MESSAGES} = 'C' }
 our $have_threads;
 BEGIN {
     $have_threads = eval{require threads; threads->create(sub{return 1})->join};
