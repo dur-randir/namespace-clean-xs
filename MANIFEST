@@ -21,6 +21,7 @@ t/11-get-class-store.t
 t/12-utf8.t
 t/13-mro.t
 t/14-all.t
+t/80-threads.t
 t/90-leaktrace.t
 t/lib/CleaneeBridge.pm
 t/lib/CleaneeBridgeDirect.pm
