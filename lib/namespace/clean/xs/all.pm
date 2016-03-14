@@ -11,6 +11,8 @@ BEGIN {
         no strict 'refs';
         *{"namespace::clean::$glob"} = *{"namespace::clean::xs::$glob"}{CODE};
     }
+
+    $namespace::clean::VERSION = 0.26; # latest as of times of writing
 }
 
 1;

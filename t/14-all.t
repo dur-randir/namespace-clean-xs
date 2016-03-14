@@ -20,7 +20,7 @@ BEGIN {
     ::is(!!__PACKAGE__->can('reap'), 1);
 
     ::is($foo, 0);
-    eval 'use namespace::clean';
+    eval 'use namespace::clean 0.26';
     ::is($foo, 42);
 }
 
