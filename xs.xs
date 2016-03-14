@@ -419,7 +419,7 @@ PPCODE:
         dMY_CXT;
         CLONE_PARAMS params = {NULL, 0, MY_CXT.owner};
 
-        cloned = sv_dup_inc((SV*)MY_CXT.storage_key, &params);
+        cloned = sv_dup_inc(MY_CXT.storage_key, &params);
     }
 
     {
