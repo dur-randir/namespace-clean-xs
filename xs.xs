@@ -418,7 +418,6 @@ void
 CLONE(...)
 PPCODE:
 {
-    tTHX owner;
     SV* cloned;
 
     {
