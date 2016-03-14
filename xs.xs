@@ -6,6 +6,16 @@
 
 #include "xs/compat.h"
 
+#define MY_CXT_KEY "namespace::clean::xs::_guts" XS_VERSION
+typedef struct {
+#ifdef USE_ITHREADS
+    tTHX owner;
+#endif
+    SV* storage_key;
+} my_cxt_t;
+
+START_MY_CXT;
+
 #define NCX_STORAGE "__NAMESPACE_CLEAN_STORAGE_XS"
 #define NCX_REMOVE (&PL_sv_yes)
 #define NCX_EXCLUDE (&PL_sv_no)
@@ -36,10 +46,11 @@ NCX_stash_glob(pTHX_ HV* stash, SV* name) {
 
 inline GV*
 NCX_storage_glob(pTHX_ HV* stash) {
-    SV** svp = hv_fetch(stash, NCX_STORAGE, strlen(NCX_STORAGE), 1);
+    dMY_CXT;
+    SV** svp = (SV**)hv_fetch_sv_flags(stash, MY_CXT.storage_key, HV_FETCH_JUST_SV | HV_FETCH_LVALUE);
 
     if (!isGV(*svp)) {
-        gv_init_pvn((GV*)*svp, stash, NCX_STORAGE, strlen(NCX_STORAGE), GV_ADDMULTI);
+        gv_init_sv((GV*)*svp, stash, MY_CXT.storage_key, GV_ADDMULTI);
     }
 
     return (GV*)*svp;
@@ -226,6 +237,15 @@ NCX_register_hook_list(pTHX_ HV* stash, AV* list) {
 MODULE = namespace::clean::xs     PACKAGE = namespace::clean::xs
 PROTOTYPES: DISABLE
 
+BOOT:
+{
+    MY_CXT_INIT;
+    MY_CXT.storage_key = newSVpvn_share(NCX_STORAGE, strlen(NCX_STORAGE), 0);
+#ifdef USE_ITHREADS
+    MY_CXT.owner = aTHX;
+#endif
+}
+
 void
 import(SV* self, ...)
 PPCODE:
@@ -385,4 +405,31 @@ PPCODE:
     PUSHs(sv_2mortal(newRV_noinc((SV*)hv)));
     XSRETURN(1);
 }
+
+#ifdef USE_ITHREADS
+
+void
+CLONE(...)
+PPCODE:
+{
+    tTHX owner;
+    SV* cloned;
+
+    {
+        dMY_CXT;
+        CLONE_PARAMS params = {NULL, 0, MY_CXT.owner};
+
+        cloned = sv_dup_inc((SV*)MY_CXT.storage_key, &params);
+    }
+
+    {
+        MY_CXT_CLONE;
+        MY_CXT.owner            = aTHX;
+        MY_CXT.storage_key      = cloned;
+    }
+
+    XSRETURN_UNDEF;
+}
+
+#endif /* USE_ITHREADS */
 

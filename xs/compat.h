@@ -16,6 +16,9 @@
     ((SV**)hv_common((hv), NULL, HEK_KEY(hek), HEK_LEN(hek), HEK_UTF8(hek), flags, NULL, HEK_HASH(hek)))
 #endif
 
+#define hv_fetch_sv_flags(hv, keysv, flags) \
+        ((SV**)hv_common((hv),(keysv), NULL, 0, 0, flags, NULL, 0))
+
 #ifndef SvREFCNT_dec_NN
 #define SvREFCNT_dec_NN SvREFCNT_dec
 #endif
