@@ -104,7 +104,7 @@ NCX_cb_add_marker(pTHX_ HE* slot, void* data) {
 
 static void
 NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
-    HE* he = (HE*)hv_common(storage, name, NULL, 0, 0, HV_FETCH_EMPTY_HE | HV_FETCH_LVALUE, NULL, 0);
+    HE* he = (HE*)hv_fetch_sv_flags(storage, name, HV_FETCH_EMPTY_HE | HV_FETCH_LVALUE);
 
     if (HeVAL(he) == NULL) {
         HeVAL(he) = marker;
@@ -432,4 +432,3 @@ PPCODE:
 }
 
 #endif /* USE_ITHREADS */
-
