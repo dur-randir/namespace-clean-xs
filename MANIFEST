@@ -34,3 +34,4 @@ t/lib/SyntaxError.pm
 t/lib/Unimport.pm
 t/lib/UnimportTarget.pm
 xs.xs
+xs/compat.h

@@ -24,3 +24,9 @@ WriteMakefile(
     LICENSE         => 'perl',
     MIN_PERL_VERSION=> 5.016000,
 );
+
+{
+    package MY;
+
+    sub postamble { '$(OBJECT) : '.join(' ', glob('xs/*.h')) }
+}
