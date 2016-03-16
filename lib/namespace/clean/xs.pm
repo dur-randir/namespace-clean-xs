@@ -2,7 +2,7 @@ package namespace::clean::xs;
 use 5.008001;
 use strict;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 require XSLoader;
 XSLoader::load('namespace::clean::xs', $VERSION);
