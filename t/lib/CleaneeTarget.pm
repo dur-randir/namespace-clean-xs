@@ -18,6 +18,7 @@ use CleaneeBridgeExplicit;
 sub d_foo { 7 }
 sub d_bar { 8 }
 sub d_baz { 9 }
+sub d_const() { 12 }
 
 sub summary { [AWAY, IGNORED, NOTAWAY, x_foo, x_bar, x_baz, d_foo, d_bar, d_baz] }
 

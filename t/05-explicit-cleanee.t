@@ -4,7 +4,7 @@ use strict;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Test::More tests => 2019;
+use Test::More tests => 2020;
 
 use_ok('CleaneeTarget');
 
@@ -19,6 +19,7 @@ ok !CleaneeTarget->can('x_baz'),    'explicitely removed disappeared (2/2)';
 ok !CleaneeTarget->can('d_foo'),    'directly removed disappeared (1/2)';
 ok  CleaneeTarget->can('d_bar'),    'not in direct removal and still there';
 ok !CleaneeTarget->can('d_baz'),    'directly removed disappeared (2/2)';
+ok !CleaneeTarget->can('d_const'),  'directly removed const disappeared';
 
 my @values = qw( 23 27 17 XFOO XBAR XBAZ 7 8 9 );
 is(CleaneeTarget->summary->[ $_ ], $values[ $_ ], sprintf('testing sub in cleanee (%d/%d)', $_ + 1, scalar @values))

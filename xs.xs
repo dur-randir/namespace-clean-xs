@@ -35,15 +35,6 @@ static MGVTBL vtscope_list = {
     NULL, NULL, NULL, NULL, NCX_on_scope_end_list
 };
 
-static HE*
-NCX_stash_glob(pTHX_ HV* stash, SV* name) {
-    HE* he = hv_fetch_ent(stash, name, 1, 0);
-
-    if (!isGV(HeVAL(he))) return NULL;
-
-    return he;
-}
-
 inline GV*
 NCX_storage_glob(pTHX_ HV* stash) {
     dMY_CXT;
@@ -140,7 +131,7 @@ NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
 
 static void
 NCX_replace_glob_sv(pTHX_ HV* stash, SV* name) {
-    HE* he = NCX_stash_glob(aTHX_ stash, name);
+    HE* he = hv_fetch_ent(stash, name, 0, 0);
     if (!he) return;
 
     NCX_REPLACE_PRE;
