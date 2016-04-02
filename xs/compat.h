@@ -1,6 +1,14 @@
 #ifndef __NAMESPACE_CLEAN_COMPAT_H_
 #define __NAMESPACE_CLEAN_COMPAT_H_
 
+#if (PERL_VERSION == 8 && PERL_SUBVERSION >= 8) || (PERL_VERSION > 8 && PERL_VERSION < 14)
+#define DEBUGGER_NEEDS_CV_RENAME
+#endif
+
+#if !defined(DEBUGGER_NEEDS_CV_RENAME) && (PERL_VERSION < 16)
+#define DEBUGGER_NEEDS_CV_PIVOT
+#endif
+
 #ifndef hv_deletehek
 #define hv_deletehek(hv, hek, flags) \
     hv_common((hv), NULL, HEK_KEY(hek), HEK_LEN(hek), HEK_UTF8(hek), (flags)|HV_DELETE, NULL, HEK_HASH(hek))
