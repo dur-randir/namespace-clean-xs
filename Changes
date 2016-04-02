@@ -1,5 +1,9 @@
 Revision history for namespace::clean::xs.
 
+0.05 Sat Apr  2 13:18:40 MSK 2016
+    - fix explicit cleaner for non-sub entries
+    - perform more thorough cleanup for leftover globs
+
 0.04 Thu Mar 17 02:41:57 MSK 2016
     - workaround rt#127708
 
