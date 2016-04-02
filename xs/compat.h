@@ -51,5 +51,9 @@
 #define HV_FETCH_EMPTY_HE 0
 #endif
 
+#ifndef sv_dup_inc
+#define sv_dup_inc(s,t) SvREFCNT_inc_NN(sv_dup(s,t))
+#endif
+
 #endif /* __NAMESPACE_CLEAN_COMPAT_H_ */
 
