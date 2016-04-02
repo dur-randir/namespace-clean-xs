@@ -114,8 +114,50 @@ NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
     }
 }
 
+#ifdef DEBUGGER_NEEDS_CV_RENAME
+static void
+NCX_fake_subname(pTHX_ HV* fake_stash, GV* gv) {
+    if (!PL_DBsub) return;
+
+    hv_storehek(fake_stash, GvNAME_HEK(gv), (SV*)gv);
+    GvSTASH(gv) = fake_stash;
+}
+
+static HV*
+NCX_debugger_fake_stash(pTHX_ HV* old_stash) {
+    HEK* orig_hek = HvNAME_HEK(old_stash);
+    assert(orig_hek);
+
+    char* full_name;
+    Newxz(full_name, HEK_LEN(orig_hek) + 26, char);
+
+    strcat(full_name, "namespace::clean::xs::d::");
+    strcat(full_name, HEK_KEY(orig_hek));
+
+    HV* fake_stash = gv_stashpvn(full_name, HEK_LEN(orig_hek) + 25, GV_ADD | HEK_UTF8(orig_hek));
+    assert(fake_stash);
+
+    Safefree(full_name);
+
+    return fake_stash;
+}
+
+#define GLOB_NO_NONSUB(gv) (0)
+#define DEBUGGER_FAKE_STASH \
+    HV* fake_stash = NCX_debugger_fake_stash(aTHX_ stash);
+#define NCX_replace_glob_sv(...) NCX_replace_glob_sv_impl(__VA_ARGS__, fake_stash)
+#define NCX_replace_glob_hek(...) NCX_replace_glob_hek_impl(__VA_ARGS__, fake_stash)
+
+#else
+
+#define NCX_fake_subname(...)
 #define GLOB_NO_NONSUB(gv) \
     !GvSV(gv) && !GvAV(gv) && !GvHV(gv) && !GvIOp(gv) && !GvFORM(gv)
+#define DEBUGGER_FAKE_STASH
+#define NCX_replace_glob_sv NCX_replace_glob_sv_impl
+#define NCX_replace_glob_hek NCX_replace_glob_hek_impl
+
+#endif
 
 #define NCX_REPLACE_PRE         \
     GV* old_gv = (GV*)HeVAL(he);\
@@ -124,7 +166,6 @@ NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
         hv_deletehek(stash, HeKEY_hek(he), G_DISCARD);  \
         return;                 \
     }                           \
-                                \
     CV* cv = GvCVu(old_gv);     \
     if (!cv) return;            \
                                 \
@@ -141,9 +182,14 @@ NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
                                     \
     GvCV_set(old_gv, cv);           \
     GvCV_set(new_gv, NULL);         \
+    NCX_fake_subname(aTHX_ fake_stash, old_gv); \
 
 static void
-NCX_replace_glob_sv(pTHX_ HV* stash, SV* name) {
+#ifdef DEBUGGER_NEEDS_CV_RENAME
+NCX_replace_glob_sv_impl(pTHX_ HV* stash, SV* name, HV* fake_stash) {
+#else
+NCX_replace_glob_sv_impl(pTHX_ HV* stash, SV* name) {
+#endif
     HE* he = hv_fetch_ent(stash, name, 0, 0);
     if (!he) return;
 
@@ -155,7 +201,11 @@ NCX_replace_glob_sv(pTHX_ HV* stash, SV* name) {
 }
 
 static void
-NCX_replace_glob_hek(pTHX_ HV* stash, HEK* hek) {
+#ifdef DEBUGGER_NEEDS_CV_RENAME
+NCX_replace_glob_hek_impl(pTHX_ HV* stash, HEK* hek, HV* fake_stash) {
+#else
+NCX_replace_glob_hek_impl(pTHX_ HV* stash, HEK* hek) {
+#endif
     HE* he = (HE*)hv_fetchhek_flags(stash, hek, 0);
     if (!he) return;
 
@@ -179,6 +229,8 @@ NCX_on_scope_end_normal(pTHX_ SV* sv, MAGIC* mg) {
     if (!hvarr) return 0;
 
     SV* pl_remove = NCX_REMOVE;
+
+    DEBUGGER_FAKE_STASH;
 
     HE* he;
     STRLEN bucket_num;
@@ -227,6 +279,8 @@ NCX_on_scope_end_list(pTHX_ SV* sv, MAGIC* mg) {
     SV** items = AvARRAY(list);
     SSize_t fill = AvFILLp(list);
     assert(items && fill >= 0);
+
+    DEBUGGER_FAKE_STASH;
 
     while (fill-- >= 0) {
         NCX_replace_glob_sv(aTHX_ stash, *items++);
@@ -362,6 +416,8 @@ PPCODE:
     HV* stash = gv_stashsv(package, 0);
     if (stash && --items > 1) {
         SP += 2;
+
+        DEBUGGER_FAKE_STASH;
 
         while (--items > 0) {
             NCX_replace_glob_sv(aTHX_ stash, *++SP);

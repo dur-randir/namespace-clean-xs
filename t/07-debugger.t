@@ -1,18 +1,5 @@
 use Test::More;
 
-=cut
-BEGIN {
-  require namespace::clean::xs;
-  if (
-    namespace::clean::_Util::DEBUGGER_NEEDS_CV_RENAME()
-      and
-    my $missing_xs = namespace::clean::_Util::_namer_load_error()
-  ) {
-    plan skip_all => $missing_xs;
-  }
-}
-=cut
-
 BEGIN {
   # shut up the debugger
   $ENV{PERLDB_OPTS} = 'NonStop';
