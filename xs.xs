@@ -104,11 +104,14 @@ NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
     }
 }
 
+#define GLOB_NO_NONSUB(gv) \
+    !GvSV(gv) && !GvAV(gv) && !GvHV(gv) && !GvIOp(gv) && !GvFORM(gv)
+
 #define NCX_REPLACE_PRE         \
     GV* old_gv = (GV*)HeVAL(he);\
                                 \
-    if (!isGV(old_gv)) {        \
-        hv_deletehek(stash, HeKEY_hek(he), 0);   \
+    if (!isGV(old_gv) || GLOB_NO_NONSUB(old_gv)) {      \
+        hv_deletehek(stash, HeKEY_hek(he), G_DISCARD);  \
         return;                 \
     }                           \
                                 \
