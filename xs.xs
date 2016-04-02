@@ -90,7 +90,12 @@ NCX_cb_add_marker(pTHX_ HE* slot, void* data) {
 
     HE* he = (HE*)hv_fetchhek_flags(m->storage, HeKEY_hek(slot), HV_FETCH_EMPTY_HE | HV_FETCH_LVALUE);
 
+#ifndef NO_HV_FETCH_EMPTY_HE
     if (HeVAL(he) == NULL) {
+#else
+    if (!SvOK(HeVAL(he))) {
+        SvREFCNT_dec_NN(HeVAL(he));
+#endif
         HeVAL(he) = m->marker;
     }
 }
@@ -99,7 +104,12 @@ static void
 NCX_single_marker(pTHX_ HV* storage, SV* name, SV* marker) {
     HE* he = (HE*)hv_fetch_sv_flags(storage, name, HV_FETCH_EMPTY_HE | HV_FETCH_LVALUE);
 
+#ifndef NO_HV_FETCH_EMPTY_HE
     if (HeVAL(he) == NULL) {
+#else
+    if (!SvOK(HeVAL(he))) {
+        SvREFCNT_dec_NN(HeVAL(he));
+#endif
         HeVAL(he) = marker;
     }
 }

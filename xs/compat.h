@@ -46,5 +46,10 @@
 #define gv_init_pvn(gv,stash,name,len,flags) gv_init(gv,stash,name,len,flags & GV_ADDMULTI)
 #endif
 
+#ifndef HV_FETCH_EMPTY_HE
+#define NO_HV_FETCH_EMPTY_HE
+#define HV_FETCH_EMPTY_HE 0
+#endif
+
 #endif /* __NAMESPACE_CLEAN_COMPAT_H_ */
 

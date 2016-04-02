@@ -14,6 +14,15 @@ no_leaks_ok {
     eval 'use namespace::clean::xs -cleanee => "Foo", "foo", "bar"';
 };
 
+no_leaks_ok {
+    eval 'sub bar {} use namespace::clean::xs';
+};
+
+no_leaks_ok {
+    eval 'sub bar {} use namespace::clean::xs -except => "bar"';
+    eval 'undef *bar';
+};
+
 use namespace::clean::xs;
 
 BEGIN {
