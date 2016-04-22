@@ -166,6 +166,7 @@ NCX_debugger_fake_stash(pTHX_ HV* old_stash) {
         hv_deletehek(stash, HeKEY_hek(he), G_DISCARD);  \
         return;                 \
     }                           \
+                                \
     CV* cv = GvCVu(old_gv);     \
     if (!cv) return;            \
                                 \
