@@ -1,4 +1,4 @@
-use 5.014000;
+use 5.010000;
 use ExtUtils::MakeMaker;
 
 #system 'pod2text lib/namespace/clean/xs.pm > README';
@@ -22,7 +22,7 @@ WriteMakefile(
     },
     ABSTRACT_FROM   => 'lib/namespace/clean/xs.pm',
     LICENSE         => 'perl',
-    MIN_PERL_VERSION=> 5.014000,
+    MIN_PERL_VERSION=> 5.010000,
 );
 
 {
