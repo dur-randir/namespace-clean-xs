@@ -1,5 +1,5 @@
 package namespace::clean::xs;
-use 5.008001;
+use 5.010000;
 use strict;
 
 our $VERSION = '0.05';
