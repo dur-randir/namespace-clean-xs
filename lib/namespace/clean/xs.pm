@@ -20,6 +20,10 @@ namespace::clean::xs - Keep imports and functions out of your namespace, in XS
 
 =head1 DESCRIPTION
 
+This module is a much faster (~30x) version of L<namespace::clean> module. L<namespace::clean> spends
+approximately 1ms per module, so it can significantly impact startup time for a large codebase. This
+module is designed to be a drop-in replacement for it.
+
 See L<namespace::clean> for the complete description of this module's logic.
 
 =head1 COMPABILITY
@@ -51,8 +55,8 @@ Will croak on unrecognized options.
 
 Will croak on unrecognized options.
 
-This module tries to minimize memory impact after it's usage, so it won't expand to full globs
-constant/stub functions. It also removes from the old package symbols without data completely.
+This module tries to minimize memory impact after it's usage, so it won't expand constant/stub
+functions to full globs. It also removes symbols without data from the package completely.
 
 =back
 
