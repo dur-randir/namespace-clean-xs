@@ -6,40 +6,42 @@ SYNOPSIS
         use namespace::clean::xs; # be lean and mean
 
 DESCRIPTION
-    See namespace::clean for complete description of this module's logic.
+    This module is a much faster (~30x) version of namespace::clean module.
+    namespace::clean spends approximately 1ms per module, so it can
+    significantly impact startup time for a large codebase. This module is
+    designed to be a drop-in replacement for it.
+
+    See namespace::clean for the complete description of this module's
+    logic.
 
 COMPABILITY
     All methods from namespace::clean are implemented in
     namespace::clean::xs, but individual functions have the following
     differences:
 
-    *   get_class_store
-
+    "get_class_store"
         Structure of the returned hash is the same, but it has nothing in
         common with the internal storage. Modifications of it are in vain.
 
         While namespace::clean saves this info forever, this module deletes
         it after namespace cleanup is done (as it never happens for a second
-        time as in the original module), so you can see valid data only for
+        time, like the original module), so you can see valid data only for
         a short time.
 
-    *   get_functions
-
+    "get_functions"
         In the returned hash function stubs and constants are not expanded.
         While you can still call the latter and can't call the former, you
         may get different error messages.
 
-    *   unimport
-
+    "unimport"
         Will croak on unrecognized options.
 
-    *   import
-
+    "import"
         Will croak on unrecognized options.
 
         This module tries to minimize memory impact after it's usage, so it
-        won't expand to full globs constant/stub functions. It also removes
-        from the old package symbols without data completely.
+        won't expand constant/stub functions to full globs. It also removes
+        symbols without data from the package completely.
 
 SEE ALSO
     *   namespace::clean
