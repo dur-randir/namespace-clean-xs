@@ -35,7 +35,7 @@ static MGVTBL vtscope_list = {
     NULL, NULL, NULL, NULL, NCX_on_scope_end_list
 };
 
-inline GV*
+static inline GV*
 NCX_storage_glob(pTHX_ HV* stash) {
     dMY_CXT;
     SV** svp = (SV**)hv_fetch_sv_flags(stash, MY_CXT.storage_key, HV_FETCH_JUST_SV | HV_FETCH_LVALUE);
@@ -47,7 +47,7 @@ NCX_storage_glob(pTHX_ HV* stash) {
     return (GV*)*svp;
 }
 
-inline HV*
+static inline HV*
 NCX_storage_hv(pTHX_ HV* stash) {
     GV* glob = NCX_storage_glob(aTHX_ stash);
     return GvHVn(glob);
