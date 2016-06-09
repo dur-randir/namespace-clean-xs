@@ -1,5 +1,8 @@
 Revision history for namespace::clean::xs.
 
+0.07 Thu Jun  9 16:03:22 MSK 2016
+    - fix compilation for older clang
+
 0.06 Thu Apr 28 14:43:32 MSK 2016
     - backport to 5.10
 
