@@ -7,6 +7,9 @@ WriteMakefile(
     NAME            => 'namespace::clean::xs',
     VERSION_FROM    => 'lib/namespace/clean/xs.pm',
     AUTHOR          => ['Sergey Aleynikov <randir@cpan.org>'],
+    CONFIGURE_REQUIRES => {
+        'ExtUtils::MakeMaker'   => 6.64,
+    },
     PREREQ_PM       => {
         'XSLoader'    => 0,
     },
