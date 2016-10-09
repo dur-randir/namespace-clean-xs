@@ -16,7 +16,7 @@ WriteMakefile(
     META_MERGE => {
         resources => {
             repository => 'https://github.com/dur-randir/namespace-clean-xs',
-            bugtracker => {web => 'https://github.com/dur-randir/namespace-clean-xs/issues'},
+            bugtracker => 'https://github.com/dur-randir/namespace-clean-xs/issues',
         },
         dynamic_config => 0,
     },
