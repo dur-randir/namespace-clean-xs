@@ -129,10 +129,11 @@ NCX_debugger_fake_stash(pTHX_ HV* old_stash) {
     assert(orig_hek);
 
     char* full_name;
-    Newxz(full_name, HEK_LEN(orig_hek) + 26, char);
+    Newx(full_name, HEK_LEN(orig_hek) + 26, char);
 
-    strcat(full_name, "namespace::clean::xs::d::");
-    strcat(full_name, HEK_KEY(orig_hek));
+    memcpy(full_name, "namespace::clean::xs::d::", 25);
+    memcpy(full_name + 25, HEK_KEY(orig_hek), HEK_LEN(orig_hek) + 1);
+    assert(full_name[HEK_LEN(orig_hek) + 25] == '\0');
 
     HV* fake_stash = gv_stashpvn(full_name, HEK_LEN(orig_hek) + 25, GV_ADD | HEK_UTF8(orig_hek));
     assert(fake_stash);
