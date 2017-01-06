@@ -314,7 +314,7 @@ void
 import(SV* self, ...)
 PPCODE:
 {
-    HV* stash = CopSTASH(PL_curcop);;
+    HV* stash = CopSTASH(PL_curcop);
 
     ++SP;
     SV* except = NULL;
