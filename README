@@ -8,8 +8,8 @@ SYNOPSIS
 DESCRIPTION
     This module is a much faster (~30x) version of namespace::clean module.
     namespace::clean spends approximately 1ms per module, so it can
-    significantly impact startup time for a large codebase. This module is
-    designed to be a drop-in replacement for it.
+    significantly impact startup time for a large codebase. This module
+    tries to be a drop-in replacement for it.
 
     See namespace::clean for the complete description of this module's
     logic.
@@ -20,13 +20,11 @@ COMPABILITY
     differences:
 
     "get_class_store"
-        Structure of the returned hash is the same, but it has nothing in
-        common with the internal storage. Modifications of it are in vain.
+        Structure of the returned hash is the same, but it has nothing to do
+        with the internal storage. Modifications of it are in vain.
 
         While namespace::clean saves this info forever, this module deletes
-        it after namespace cleanup is done (as it never happens for a second
-        time, like the original module), so you can see valid data only for
-        a short time.
+        it after namespace cleanup is done.
 
     "get_functions"
         In the returned hash function stubs and constants are not expanded.
@@ -40,8 +38,9 @@ COMPABILITY
         Will croak on unrecognized options.
 
         This module tries to minimize memory impact after it's usage, so it
-        won't expand constant/stub functions to full globs. It also removes
-        symbols without data from the package completely.
+        won't expand constant/stub functions to full globs (unlike what
+        namespace::clean does). It also removes symbols without data from
+        the package completely.
 
 SEE ALSO
     *   namespace::clean
@@ -49,7 +48,7 @@ SEE ALSO
     *   namespace::clean::xs::all
 
 COPYRIGHT AND LICENSE
-    Copyright (C) 2016 by Sergey Aleynikov
+    Copyright (C) 2016-2017 by Sergey Aleynikov
 
     This library is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself, either Perl version 5.10.1 or, at

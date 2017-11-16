@@ -22,7 +22,7 @@ namespace::clean::xs - Keep imports and functions out of your namespace, in XS
 
 This module is a much faster (~30x) version of L<namespace::clean> module. L<namespace::clean> spends
 approximately 1ms per module, so it can significantly impact startup time for a large codebase. This
-module is designed to be a drop-in replacement for it.
+module tries to be a drop-in replacement for it.
 
 See L<namespace::clean> for the complete description of this module's logic.
 
@@ -35,12 +35,11 @@ individual functions have the following differences:
 
 =item L</get_class_store>
 
-Structure of the returned hash is the same, but it has nothing in common with the internal
+Structure of the returned hash is the same, but it has nothing to do with the internal
 storage. Modifications of it are in vain.
 
 While L<namespace::clean> saves this info forever, this module deletes it after namespace
-cleanup is done (as it never happens for a second time, like the original module), so you
-can see valid data only for a short time.
+cleanup is done.
 
 =item L</get_functions>
 
@@ -56,7 +55,8 @@ Will croak on unrecognized options.
 Will croak on unrecognized options.
 
 This module tries to minimize memory impact after it's usage, so it won't expand constant/stub
-functions to full globs. It also removes symbols without data from the package completely.
+functions to full globs (unlike what L<namespace::clean> does). It also removes symbols without
+data from the package completely.
 
 =back
 
@@ -72,7 +72,7 @@ functions to full globs. It also removes symbols without data from the package c
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2016 by Sergey Aleynikov
+Copyright (C) 2016-2017 by Sergey Aleynikov
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.1 or,
