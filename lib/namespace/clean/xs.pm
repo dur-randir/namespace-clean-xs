@@ -57,8 +57,9 @@ cleanup is done.
 
 =item L</get_functions>
 
-In the returned hash function stubs and constants are not expanded. While you can still
-call the latter and can't call the former, you may get different error messages.
+In the returned hash function stubs and constants are not expanded. You can't count on calling
+values in it as functions unless you access corresponding glob first (and loose any memory
+savings in the process).
 
 =back
 
