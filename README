@@ -6,18 +6,29 @@ SYNOPSIS
         use namespace::clean::xs; # be lean and mean
 
 DESCRIPTION
-    This module is a much faster (~30x) version of namespace::clean module.
+    This module is a much faster (~30x) alternative for namespace::clean.
     namespace::clean spends approximately 1ms per module, so it can
     significantly impact startup time for a large codebase. This module
     tries to be a drop-in replacement for it.
 
-    See namespace::clean for the complete description of this module's
-    logic.
+    See namespace::clean for a workflow description/usage examples.
 
 COMPABILITY
-    All methods from namespace::clean are implemented in
-    namespace::clean::xs, but individual functions have the following
-    differences:
+    This module tries to minimize memory impact after it's usage, so it
+    won't expand constant/stub functions to full globs. It also removes
+    symbols without data from the package completely.
+
+    Since version 0.27 namespace::clean allows you to clean a single package
+    twice. This behaviour is not supported yet.
+
+    While all methods from namespace::clean are implemented, individual
+    functions have the following differences:
+
+    "import"
+        Will croak on unrecognized options.
+
+    "unimport"
+        Will croak on unrecognized options.
 
     "get_class_store"
         Structure of the returned hash is the same, but it has nothing to do
@@ -30,17 +41,6 @@ COMPABILITY
         In the returned hash function stubs and constants are not expanded.
         While you can still call the latter and can't call the former, you
         may get different error messages.
-
-    "unimport"
-        Will croak on unrecognized options.
-
-    "import"
-        Will croak on unrecognized options.
-
-        This module tries to minimize memory impact after it's usage, so it
-        won't expand constant/stub functions to full globs (unlike what
-        namespace::clean does). It also removes symbols without data from
-        the package completely.
 
 SEE ALSO
     *   namespace::clean

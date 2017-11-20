@@ -20,18 +20,32 @@ namespace::clean::xs - Keep imports and functions out of your namespace, in XS
 
 =head1 DESCRIPTION
 
-This module is a much faster (~30x) version of L<namespace::clean> module. L<namespace::clean> spends
+This module is a much faster (~30x) alternative for L<namespace::clean>. L<namespace::clean> spends
 approximately 1ms per module, so it can significantly impact startup time for a large codebase. This
 module tries to be a drop-in replacement for it.
 
-See L<namespace::clean> for the complete description of this module's logic.
+See L<namespace::clean> for a workflow description/usage examples.
 
 =head1 COMPABILITY
 
-All methods from L<namespace::clean> are implemented in L<namespace::clean::xs>, but
-individual functions have the following differences:
+This module tries to minimize memory impact after it's usage, so it won't expand constant/stub
+functions to full globs. It also removes symbols without data from the package completely.
+
+Since version 0.27 L<namespace::clean> allows you to clean a single package twice. This behaviour
+is not supported yet.
+
+While all methods from L<namespace::clean> are implemented, individual functions have
+the following differences:
 
 =over
+
+=item L</import>
+
+Will croak on unrecognized options.
+
+=item L</unimport>
+
+Will croak on unrecognized options.
 
 =item L</get_class_store>
 
@@ -45,18 +59,6 @@ cleanup is done.
 
 In the returned hash function stubs and constants are not expanded. While you can still
 call the latter and can't call the former, you may get different error messages.
-
-=item L</unimport>
-
-Will croak on unrecognized options.
-
-=item L</import>
-
-Will croak on unrecognized options.
-
-This module tries to minimize memory impact after it's usage, so it won't expand constant/stub
-functions to full globs (unlike what L<namespace::clean> does). It also removes symbols without
-data from the package completely.
 
 =back
 
