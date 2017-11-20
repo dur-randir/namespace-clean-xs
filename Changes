@@ -1,5 +1,9 @@
 Revision history for namespace::clean::xs.
 
+0.09 Tue Nov 21 01:54:49 MSK 2017
+    - skip threading tests on perl 5.10.0
+    - update docs
+
 0.08 Thu Nov 16 18:28:10 MSK 2017
     - fix tests for perl 5.27.6
 
